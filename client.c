@@ -1,0 +1,231 @@
+#include <systemd/sd-bus.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+
+struct ctx { int done; int result; };
+
+static int log_error(int error, const char *message) {
+  fprintf(stderr, "%s: %s\n", message, strerror(-error));
+  return error;
+}
+
+static int print_properry(sd_bus *bus, const char *name, char **RetValue) {
+
+    return sd_bus_get_property_string(bus, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", name, NULL, RetValue);
+
+}
+
+static int on_Completed(sd_bus_message *m, void *userdata, sd_bus_error *err)
+{
+    struct ctx *c = userdata;
+    int r = sd_bus_message_read(m, "i", &c->result);
+    if (r < 0) return r;
+    printf("Completed: %d\n", c->result);
+    c->done = 1;
+    return 0;
+}
+
+static int on_props_changed(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
+
+    int ret = 0; 
+
+    const char *interface = NULL; 
+    const char *property_name = NULL;
+    int progress_value = 0; 
+    const char *progress_str = NULL;
+    int depth = 0; 
+    sd_bus_message_read(m, "s", &interface);
+    if (strcmp(interface, "de.pengutronix.rauc.Installer") == 0)
+    {
+        printf("Properties changed for interface: %s\n", interface);
+        /* Handle the property change event here */
+
+        // enter the array of changed properties
+        ret = sd_bus_message_enter_container(m, 'a', "{sv}");
+        if (ret < 0) {
+            printf("Failed to enter container: %s\n", strerror(-ret));
+            return ret;
+        }
+        while((ret = sd_bus_message_enter_container(m, 'e', "sv")) > 0){
+
+            // read the property name
+            ret = sd_bus_message_read(m,"s", &property_name);
+            if (ret < 0) {
+                printf("Failed to read property name: %s\n", strerror(-ret));
+                return ret;
+            }
+            if (strcmp(property_name, "Progress") == 0)
+            {
+                // enter the variant container
+                ret = sd_bus_message_enter_container(m, 'v', "(isi)"); 
+                if (ret < 0) {
+                    printf("Failed to enter variant container: %s\n", strerror(-ret));
+                    return ret;
+                }
+                // read the struct values
+                ret = sd_bus_message_read(m, "(isi)", &progress_value, &progress_str, &depth);
+                if (ret < 0) {
+                    printf("Failed to read struct value: %s\n", strerror(-ret));
+                    return ret;
+                }
+                printf("Progress = %d%% (%s)\n", progress_value, progress_str);
+
+                // exit the variant container
+                ret = sd_bus_message_exit_container(m);
+                if (ret < 0) {
+                    printf("Failed to exit variant container: %s\n", strerror(-ret));
+                    return ret;
+                }
+
+            }
+            else
+            {
+                //skip the variant container for other properties
+                ret = sd_bus_message_skip(m, "v");  
+                if (ret < 0) {
+                    printf("Failed to skip variant container: %s\n", strerror(-ret));
+                    return ret;
+                }
+            }
+            //exit the pair container
+            ret = sd_bus_message_exit_container(m);
+            if (ret < 0) {
+                printf("Failed to exit the pair container: %s\n", strerror(-ret));
+                return ret;
+            }
+        }
+        // exit the array container
+        ret = sd_bus_message_exit_container(m);
+        if (ret < 0) {
+            printf("Failed to exit array container: %s\n", strerror(-ret));
+            return ret;
+        }
+    }
+
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    struct ctx ctx = {0}; // Initialize the context
+    int ret = 0; 
+
+    sd_bus *bus = NULL; 
+    // const char destination = "de.pengutronix.rauc";
+    // const char path = "/"; 
+    // const char interface = "de.pengutronix.rauc.installer"; 
+    // const char member = "BootSlot"; 
+    sd_bus_error *bus_error = NULL; 
+    const char *Slot = NULL; 
+    sd_bus_message *message = NULL; 
+    char *RetValue = NULL;
+
+
+    //Connexion to the system dbus
+    ret = sd_bus_open_system(&bus); 
+    if (ret < 0)
+    {
+        printf("error while connecting to the dbus system \n"); 
+        return ret; 
+    }
+    else
+    {
+        printf("Connected to the system dbus successfully ! \n"); 
+    }
+
+    /* Read BootSlot Property */
+    ret = print_properry(bus, "BootSlot", &RetValue);
+    if (ret < 0)
+    {
+        printf("error while getting BootSlot property \n"); 
+        return log_error(ret, "BootSlot property failed");
+    }
+    else
+    {
+        printf("BootSlot = %s \n", RetValue);
+    }
+
+    /* Read Operation Property */
+    ret = print_properry(bus, "Operation", &RetValue);
+    if (ret < 0)
+    {
+        printf("error while getting Operation property \n"); 
+        return log_error(ret, "Operation property failed");
+    }
+    else
+    {
+        printf("Operation = %s \n", RetValue);
+    }
+
+    /* Read Compatible Property */
+    ret = print_properry(bus, "Compatible", &RetValue);
+    if (ret < 0)
+    {
+        printf("error while getting Compatible property \n"); 
+        return log_error(ret, "Compatible property failed");
+    }
+    else
+    {
+        printf("Compatible = %s \n", RetValue);
+    }
+
+    /* Match to the signal Completed */
+    ret = sd_bus_match_signal(bus, NULL, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "Completed", (void*)on_Completed, &ctx);
+    if (ret < 0)
+    {
+        printf("error while matching the signal Completed \n");
+        return log_error(ret, "Completed signal match failed");
+    }   
+    else
+    {
+        printf("Completed signal matched successfully ! \n");
+    }
+
+    /* Match to the signal PropertiesChanged */
+    ret = sd_bus_match_signal(bus, NULL, "de.pengutronix.rauc", "/", "org.freedesktop.DBus.Properties", "PropertiesChanged", (void*)on_props_changed, NULL);
+    if (ret < 0)
+    {
+        printf("error while matching the signal PropertiesChanged \n");
+        return log_error(ret, "PropertiesChanged signal match failed");
+    }
+    else
+    {
+        printf("PropertiesChanged signal matched successfully ! \n");
+    }
+
+    /* Install the bundle */
+    if (argv[1] != NULL)
+    {
+        ret = sd_bus_call_method(bus, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "InstallBundle", NULL, &message, "sa{sv}", argv[1], 0);
+        if (ret < 0)
+        {
+            printf("error while calling InstallBundle method \n");
+            return log_error(ret, "InstallBundle method call failed");
+        }
+        else
+        {
+            printf("InstallBundle method called successfully ! \n");
+        }
+    }
+    else
+    {
+        printf("Please provide the bundle path as an argument \n");
+        return -1; 
+    }
+
+    while(!ctx.done)
+    {
+        ret = sd_bus_process(bus, NULL);
+        if (ret == 0)
+        {
+            sd_bus_wait(bus, UINT64_MAX);
+        }
+        if (ret < 0) break;
+        if (ret > 0) continue; 
+
+    }
+
+    return ctx.result == 0 ? 0 : 1;
+}
