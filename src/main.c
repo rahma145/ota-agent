@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <curl/curl.h>
 #include "log.h"
+#include "hawkbit.h"
 
 struct ctx { int done; int result; };
 
@@ -23,6 +25,7 @@ static int on_Completed(sd_bus_message *m, void *userdata, sd_bus_error *err)
 }
 
 static int on_props_changed(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
+
 
     int ret = 0; 
 
@@ -112,6 +115,21 @@ int main(int argc, char *argv[])
     const char *Slot = NULL; 
     sd_bus_message *message = NULL; 
     char *RetValue = NULL;
+
+    struct buf response; 
+    RetStatus status; 
+
+    status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
+    if (status == STATUS_OK)
+    {
+        printf ("hawkbit poll OK and response = %s \n", response.data);
+    }
+    else
+    {
+        printf ("hawkbit poll NOK ! \n"); 
+    }
+
+
 
 
     //Connexion to the system dbus

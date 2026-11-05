@@ -23,7 +23,7 @@ DESTDIR ?=
 all: $(BIN)
 
 $(BIN): $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(OBJ) -lsystemd
+	$(CC) $(LDFLAGS) -o $@ $(OBJ) -lsystemd -lcurl
 
 build/%.o: src/%.c | build
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
