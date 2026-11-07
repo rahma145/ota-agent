@@ -36,12 +36,17 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
         printf("URL = %s\n", url);
 
         curl_easy_setopt(h, CURLOPT_URL, url);
+        printf("here is the error \n ", url);
         curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
+        printf("here is the error \n ", url);
         curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, write_cb);
+        printf("here is the error \n ", url);
         curl_easy_setopt(h, CURLOPT_WRITEDATA, out);
+        printf("here is the error \n ", url);
 
         CURLcode result; 
         result = curl_easy_perform(h); 
+        printf("here is the error \n ", url);
 
         if (result == CURLE_OK)
         {
