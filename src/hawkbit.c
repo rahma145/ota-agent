@@ -24,7 +24,7 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
     curl_global_init(CURL_GLOBAL_ALL);
     CURL *h = curl_easy_init(); 
 
-    snprintf(url, sizeof(url), "/%s/%s/controller/v1/%s", base_url, tenant, controller_id);
+    snprintf(url, sizeof(url), "%s/%s/controller/v1/%s", base_url, tenant, controller_id);
     snprintf(auth_header, sizeof(auth_header), "Authorization: TargetToken %s", token); 
 
     if (h)
@@ -32,6 +32,8 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
         printf("Creating the handle OK \n"); 
         struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, auth_header);
+
+        printf("URL = %s\n", url);
 
         curl_easy_setopt(h, CURLOPT_URL, url);
         curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
