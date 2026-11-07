@@ -8,6 +8,7 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
     struct buf* buffer = userdata; 
     char *tmp = realloc(buffer->data, buffer->len + data_len +1); 
     if (!tmp) return 0; 
+    buffer->data = tmp; 
     memcpy(buffer->data + buffer->len, ptr, data_len); 
     buffer->len += data_len; 
 
