@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <cjson/cJSON.h>
 #include "hawkbit.h"
 
 static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
@@ -34,21 +35,13 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
         struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, auth_header);
 
-        printf("URL = %s\n", url);
-
         curl_easy_setopt(h, CURLOPT_URL, url);
-        printf("here is the error \n ", url);
         curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
-        printf("here is the error \n ", url);
         curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, write_cb);
-        printf("here is the error \n ", url);
         curl_easy_setopt(h, CURLOPT_WRITEDATA, out);
-        printf("here is the error \n ", url);
 
         CURLcode result; 
         result = curl_easy_perform(h); 
-        sleep(10); 
-        printf("here is the error \n ", url);
 
         if (result == CURLE_OK)
         {
@@ -83,4 +76,50 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
     curl_global_cleanup(); 
         
     return RetStatus; 
+}
+
+RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_len)
+{
+    RetStatus Status = STATUS_OK; 
+    cJSON * root = cJSON_Parse(json_text);
+    cJSON *item = NULL; 
+    if(root)
+    {
+        item = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
+        if(item)
+        {
+            item = cJSON_GetObjectItemCaseSensitive(root, "deploymentBase");
+            if(item)
+            {
+                if (cJSON_IsString(item) && (item->valuestring != NULL))
+                {
+                    snprintf(href_out, href_len, item->valuestring);
+                    Status = STATUS_OK;  
+                }
+                else
+                {
+                    printf("href value type is not string \n"); 
+                    Status = STATUS_NOK; 
+                }
+            }
+            else
+            {
+                printf("object deployementBase not found \n"); 
+                Status = STATUS_NOK; 
+            }
+        }
+        else
+        {
+            printf("object links not found \n"); 
+            Status = STATUS_NOK; 
+        }
+    }
+    else
+    {
+        printf("root is NULL \n"); 
+        Status = STATUS_NOK; 
+    }
+    cJSON_Delete(root);
+    return Status; 
+    
 }

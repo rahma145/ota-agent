@@ -15,6 +15,7 @@ struct buf { char *data; size_t len; };
 static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata); 
 
 RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *controller_id, const char *token, struct buf *out); 
+RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_len); 
 
 
 
