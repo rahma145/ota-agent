@@ -46,6 +46,7 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
 
         CURLcode result; 
         result = curl_easy_perform(h); 
+        sleep(3); 
         printf("here is the error \n ", url);
 
         if (result == CURLE_OK)
