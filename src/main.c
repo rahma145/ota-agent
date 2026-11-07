@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     sd_bus_message *message = NULL; 
     char *RetValue = NULL;
 
-    struct buf response; 
+    struct buf response = {0}; 
     RetStatus status; 
 
     status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
