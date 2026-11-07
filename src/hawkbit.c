@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <string.h>
 #include "hawkbit.h"
 
 static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
