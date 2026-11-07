@@ -59,7 +59,7 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
         }
         else 
         {
-            printf("Executing http request NOK and curl code = %d \n", result); 
+            printf("Executing http request NOK and curl code = %d and url = %s \n", result,url); 
             RetStatus = STATUS_NOK; 
         }
         curl_slist_free_all(headers); 
