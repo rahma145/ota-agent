@@ -88,7 +88,7 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
     
 }
 
-static RetStatus hawkbit_get(const char *url, const char *token, struct buf *out)
+RetStatus hawkbit_get(const char *url, const char *token, struct buf *out)
 {
 
     int RetStatus = STATUS_NOK; 

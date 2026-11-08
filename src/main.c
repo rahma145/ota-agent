@@ -132,6 +132,18 @@ int main(int argc, char *argv[])
         if (status == STATUS_OK)
         {
             printf("update availabe and href = %s \n", href); 
+            struct buf response2 = {0};
+            char *url; 
+            status = hawkbit_get(href, argv[4], response2.data);
+            if (status == STATUS_OK)
+            {
+                printf("deployement info = %s \n", response2.data); 
+            }
+            else
+            {
+                printf("No deployment info ! \n"); 
+            }
+            
         } 
         else 
         {
