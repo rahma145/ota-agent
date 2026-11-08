@@ -20,13 +20,82 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 
 RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *controller_id, const char *token, struct buf *out)
 {
-    int RetStatus = STATUS_NOK; 
     char url[512]; 
+    RetStatus Status = STATUS_OK; 
+
+    snprintf(url, sizeof(url), "%s/%s/controller/v1/%s", base_url, tenant, controller_id);
+    Status = hawkbit_get(url, token, out); 
+    
+    return Status; 
+}
+
+RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_len)
+{
+    printf("executing hawkbit_has_update \n"); 
+    RetStatus Status = STATUS_OK; 
+    cJSON * root = cJSON_Parse(json_text);
+    if(root)
+    {
+        printf("root found \n"); 
+        cJSON *links = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
+        if(cJSON_IsObject(links))
+        {
+            printf("links found \n"); 
+            cJSON *deploymentBase = cJSON_GetObjectItemCaseSensitive(links, "deploymentBase");
+            if(cJSON_IsObject(deploymentBase))
+            {
+                printf ("deploymentBase found \n"); 
+                cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href"); 
+                
+                if (cJSON_IsString(href) && (href->valuestring))
+                {
+                    if((href_out != NULL) && (href_len != 0))
+                    {
+                        snprintf(href_out, href_len, "%s", href->valuestring);
+                        Status = STATUS_OK; 
+                    }
+                    else
+                    {
+                        printf("wrong arguments \n"); 
+                        Status = STATUS_NOK; 
+                    }
+                }
+                else
+                {
+                    printf("href is not string \n"); 
+                    Status = STATUS_NOK; 
+                }
+            }
+            else
+            {
+                printf("object deploymentBase not found \n"); 
+                Status = STATUS_NOK; 
+            }
+        }
+        else
+        {
+            printf("object links not found \n"); 
+            Status = STATUS_NOK; 
+        }
+    }
+    else
+    {
+        printf("root is NULL \n"); 
+        Status = STATUS_NOK; 
+    }
+    cJSON_Delete(root);
+    return Status; 
+    
+}
+
+static RetStatus hawkbit_get(const char *url, const char *token, struct buf *out)
+{
+
+    int RetStatus = STATUS_NOK; 
     char auth_header[300]; 
     curl_global_init(CURL_GLOBAL_ALL);
     CURL *h = curl_easy_init(); 
 
-    snprintf(url, sizeof(url), "%s/%s/controller/v1/%s", base_url, tenant, controller_id);
     snprintf(auth_header, sizeof(auth_header), "Authorization: TargetToken %s", token); 
 
     if (h)
@@ -76,80 +145,5 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
     curl_global_cleanup(); 
         
     return RetStatus; 
-}
 
-RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_len)
-{
-    printf("executing hawkbit_has_update \n"); 
-    RetStatus Status = STATUS_OK; 
-    cJSON * root = cJSON_Parse(json_text);
-    if(root)
-    {
-        printf("root found \n"); 
-        cJSON *links = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
-        if(cJSON_IsObject(links))
-        {
-            printf("links found \n"); 
-            cJSON *deploymentBase = cJSON_GetObjectItemCaseSensitive(links, "deploymentBase");
-            if(cJSON_IsObject(deploymentBase))
-            {
-                printf ("deploymentBase found \n"); 
-                cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href"); 
-                
-                if (cJSON_IsString(href) && (href->valuestring))
-                {
-                    if((href_out != NULL) && (href_len != 0))
-                    {
-                        snprintf(href_out, href_len, "%s", href->valuestring);
-                        Status = STATUS_OK; 
-                    }
-                    else
-                    {
-                        printf("wrong arguments \n"); 
-                        Status = STATUS_NOK; 
-                    }
-                }
-                else
-                {
-                    printf("href is not string \n"); 
-                    Status = STATUS_NOK; 
-                }
-                // if (cJSON_IsString(href) && (href->valuestring))
-                // {
-                //     if (!(href_out) && !(href_len))
-                //     {
-                //         snprintf(href_out, href_len, "%s", href->valuestring);
-                //         Status = STATUS_OK; 
-                //     }
-                //     else
-                //     {
-                //         Status = STATUS_NOK; 
-                //     } 
-                // }
-                // else
-                // {
-                //     printf("href is not string \n"); 
-                //     Status = STATUS_NOK; 
-                // }
-            }
-            else
-            {
-                printf("object deploymentBase not found \n"); 
-                Status = STATUS_NOK; 
-            }
-        }
-        else
-        {
-            printf("object links not found \n"); 
-            Status = STATUS_NOK; 
-        }
-    }
-    else
-    {
-        printf("root is NULL \n"); 
-        Status = STATUS_NOK; 
-    }
-    cJSON_Delete(root);
-    return Status; 
-    
 }
