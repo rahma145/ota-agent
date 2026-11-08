@@ -101,9 +101,8 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
                 {
                     printf("href is not string \n"); 
                     cJSON_Delete(href); 
+                    Status = STATUS_NOK; 
                 }
-
-
             }
             else
             {

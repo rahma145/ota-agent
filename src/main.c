@@ -6,7 +6,7 @@
 #include "log.h"
 #include "hawkbit.h"
 
-#define HREF_LEN 256 
+#define HREF_LEN 512
 
 struct ctx { int done; int result; };
 
@@ -123,6 +123,7 @@ int main(int argc, char *argv[])
     char *href = NULL; 
 
     status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
+    sleep(5); 
     if (status == STATUS_OK)
     {
         printf ("hawkbit poll OK and response = %s \n", response.data);
