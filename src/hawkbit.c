@@ -80,16 +80,20 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
 
 RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_len)
 {
+    printf("executing hawkbit_has_update \n"); 
     RetStatus Status = STATUS_OK; 
     cJSON * root = cJSON_Parse(json_text);
     if(root)
     {
+        printf("root found \n"); 
         cJSON *links = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
         if(cJSON_IsObject(links))
         {
+            printf("links found \n"); 
             cJSON *deploymentBase = cJSON_GetObjectItemCaseSensitive(links, "deploymentBase");
             if(cJSON_IsObject(deploymentBase))
             {
+                printf ("deploymentBase found \n"); 
                 cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href");
                 if (cJSON_IsString(href) && (href->valuestring))
                 {
