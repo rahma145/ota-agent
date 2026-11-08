@@ -82,47 +82,41 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
 {
     RetStatus Status = STATUS_OK; 
     cJSON * root = cJSON_Parse(json_text);
-    cJSON *item = NULL; 
     if(root)
     {
-        item = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
-        if(item)
+        cJSON *links = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
+        if(cJSON_IsObject(links))
         {
-            cJSON *item1 = NULL; 
-            item1 = cJSON_GetObjectItemCaseSensitive(item, "deploymentBase");
-            if(item1)
+            cJSON *deploymentBase = cJSON_GetObjectItemCaseSensitive(links, "deploymentBase");
+            if(cJSON_IsObject(deploymentBase))
             {
-                cJSON *item2 = NULL; 
-                item2 = cJSON_GetObjectItemCaseSensitive(item1, "href");
-                if(item2)
+                cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href");
+                if (cJSON_IsString(href) && (href->valuestring))
                 {
-                    if (cJSON_IsString(item2) && (item2->valuestring != NULL))
-                    {
-                        memcpy(href_out, item2->valuestring, href_len);
-                        Status = STATUS_OK;  
-                    }
-                    else
-                    {
-                        printf("href value type is not string \n"); 
-                        Status = STATUS_NOK; 
-                    } 
+                    printf("href is string and its value is %s", href->valuestring); 
+                    Status = STATUS_OK; 
+                    memcpy(href_out, href_len, href->valuestring); 
                 }
                 else
                 {
-                    printf("object href not found \n");
+                    printf("href is not string \n"); 
+                    cJSON_Delete(href); 
                 }
+
 
             }
             else
             {
                 printf("object deploymentBase not found \n"); 
                 Status = STATUS_NOK; 
+                cJSON_Delete(deploymentBase); 
             }
         }
         else
         {
             printf("object links not found \n"); 
             Status = STATUS_NOK; 
+            cJSON_Delete(links); 
         }
     }
     else
