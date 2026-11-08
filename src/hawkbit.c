@@ -100,6 +100,10 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
                 {
                     printf("href_out is NULL \n"); 
                 }
+                else 
+                {
+                    printf("href is not null \n"); 
+                }
                 memcpy(href_out, href_len, href->valuestring); 
                 printf("href_out = %s \n", href_out); 
                 // if (cJSON_IsString(href) && (href->valuestring))
