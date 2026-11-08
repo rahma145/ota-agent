@@ -88,12 +88,13 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
         item = cJSON_GetObjectItemCaseSensitive(root, "_links"); 
         if(item)
         {
-            item = cJSON_GetObjectItemCaseSensitive(root, "deploymentBase");
-            if(item)
+            cJSON *item1 = NULL; 
+            item1 = cJSON_GetObjectItemCaseSensitive(item, "deploymentBase");
+            if(item1)
             {
-                if (cJSON_IsString(item) && (item->valuestring != NULL))
+                if (cJSON_IsString(item1) && (item1->valuestring != NULL))
                 {
-                    memcpy(href_out, item->valuestring, href_len);
+                    memcpy(href_out, item1->valuestring, href_len);
                     Status = STATUS_OK;  
                 }
                 else
@@ -104,7 +105,7 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
             }
             else
             {
-                printf("object deployementBase not found \n"); 
+                printf("object deploymentBase not found \n"); 
                 Status = STATUS_NOK; 
             }
         }
