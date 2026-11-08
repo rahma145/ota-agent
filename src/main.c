@@ -143,9 +143,6 @@ int main(int argc, char *argv[])
         printf ("hawkbit poll NOK ! \n"); 
     }
 
-
-
-
     //Connexion to the system dbus
     ret = sd_bus_open_system(&bus); 
     if (ret < 0)

@@ -94,44 +94,35 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
             if(cJSON_IsObject(deploymentBase))
             {
                 printf ("deploymentBase found \n"); 
-                cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href");
-                printf("href value : %s \n", href->valuestring); 
-                if (href_out == NULL)
+                cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href"); 
+                if (cJSON_IsString(href) && (href->valuestring))
                 {
-                    printf("href_out is NULL \n"); 
+                    if (!(href_out) && !(href_len))
+                    {
+                        snprintf(href_out, href_len, "%s", href->valuestring);
+                        Status = STATUS_OK; 
+                    }
+                    else
+                    {
+                        Status = STATUS_NOK; 
+                    } 
                 }
-                else 
+                else
                 {
-                    printf("href is not null \n"); 
+                    printf("href is not string \n"); 
+                    Status = STATUS_NOK; 
                 }
-                snprintf(href_out, href_len, "%s", href->valuestring); 
-                // memcpy(href_out, href_len, href->valuestring); 
-                printf("href_out = %s \n", href_out); 
-                // if (cJSON_IsString(href) && (href->valuestring))
-                // {
-                //     printf("href is string and its value is %s", href->valuestring); 
-                //     Status = STATUS_OK; 
-                //     memcpy(href_out, href_len, href->valuestring); 
-                // }
-                // else
-                // {
-                //     printf("href is not string \n"); 
-                //     cJSON_Delete(href); 
-                //     Status = STATUS_NOK; 
-                // }
             }
             else
             {
                 printf("object deploymentBase not found \n"); 
                 Status = STATUS_NOK; 
-                cJSON_Delete(deploymentBase); 
             }
         }
         else
         {
             printf("object links not found \n"); 
             Status = STATUS_NOK; 
-            cJSON_Delete(links); 
         }
     }
     else
