@@ -95,18 +95,18 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
             {
                 printf ("deploymentBase found \n"); 
                 cJSON *href = cJSON_GetObjectItemCaseSensitive(deploymentBase, "href");
-                if (cJSON_IsString(href) && (href->valuestring))
-                {
-                    printf("href is string and its value is %s", href->valuestring); 
-                    Status = STATUS_OK; 
-                    memcpy(href_out, href_len, href->valuestring); 
-                }
-                else
-                {
-                    printf("href is not string \n"); 
-                    cJSON_Delete(href); 
-                    Status = STATUS_NOK; 
-                }
+                // if (cJSON_IsString(href) && (href->valuestring))
+                // {
+                //     printf("href is string and its value is %s", href->valuestring); 
+                //     Status = STATUS_OK; 
+                //     memcpy(href_out, href_len, href->valuestring); 
+                // }
+                // else
+                // {
+                //     printf("href is not string \n"); 
+                //     cJSON_Delete(href); 
+                //     Status = STATUS_NOK; 
+                // }
             }
             else
             {
