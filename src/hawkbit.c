@@ -98,8 +98,16 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
                 
                 if (cJSON_IsString(href) && (href->valuestring))
                 {
-                    snprintf(href_out, href_len, "%s", href->valuestring);
-                    Status = STATUS_OK; 
+                    if((href_out != NULL) && (href_len != 0))
+                    {
+                        snprintf(href_out, href_len, "%s", href->valuestring);
+                        Status = STATUS_OK; 
+                    }
+                    else
+                    {
+                        printf("wrong arguments \n"); 
+                        Status = STATUS_NOK; 
+                    }
                 }
                 else
                 {
