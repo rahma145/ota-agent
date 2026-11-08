@@ -3,6 +3,8 @@
 #include <cjson/cJSON.h>
 #include "hawkbit.h"
 
+#define MAX_STR_LEN 256
+
 static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
     size_t data_len = nmemb * size ;
@@ -91,7 +93,7 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
 RetStatus hawkbit_get(const char *url, const char *token, struct buf *out)
 {
 
-    int RetStatus = STATUS_NOK; 
+    RetStatus RetStatus = STATUS_NOK; 
     char auth_header[300]; 
     curl_global_init(CURL_GLOBAL_ALL);
     CURL *h = curl_easy_init(); 
@@ -145,5 +147,97 @@ RetStatus hawkbit_get(const char *url, const char *token, struct buf *out)
     curl_global_cleanup(); 
         
     return RetStatus; 
+
+}
+RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
+{
+    RetStatus Status = STATUS_OK; 
+    cJSON * root = cJSON_Parse(response);
+    if(root)
+    {
+        cJSON *deployment = cJSON_GetObjectItemCaseSensitive(root, "deployment"); 
+        if (deployment)
+        {
+            printf("deployment object found \n"); 
+            cJSON *chunks = cJSON_GetObjectItemCaseSensitive(deployment, "chunks"); 
+            if (cJSON_IsArray(chunks))
+            {
+                printf("chunks found \n"); 
+                cJSON *chunk = cJSON_GetArrayItem(chunks, 0);
+                cJSON *artifacts_array = cJSON_GetObjectItemCaseSensitive(chunk, "artifacts");
+                if (cJSON_IsArray(artifacts_array))
+                {
+                    printf("artifacts is an array \n"); 
+                    cJSON *artifact = cJSON_GetArrayItem(artifacts_array, 0); 
+                    if (cJSON_IsObject(artifact))
+                    {
+                        // Filename
+                        cJSON *filename = cJSON_GetObjectItemCaseSensitive(artifact, "filename");
+                        if(cJSON_IsString(filename))
+                        {
+                            strncpy(info->filename, filename->valuestring, MAX_FILENAME_SIZE - 1); 
+                        }
+
+                        // sha256
+                        cJSON *hashes = cJSON_GetObjectItemCaseSensitive(artifact, "hashes");
+                        if (cJSON_IsObject(hashes))
+                        {
+                            cJSON *sha256 = cJSON_GetObjectItemCaseSensitive(hashes, "hashes");
+                            if (cJSON_IsString(sha256))
+                            {
+                                strncpy(info->sha256, sha256->valuestring, MAX_SHA_SIZE - 1); 
+                            }
+                        }
+
+                        // Size
+                        cJSON *size = cJSON_GetObjectItemCaseSensitive(artifact, "size");
+                        if (cJSON_IsNumber(size))
+                        {
+                            info->size = size->valuedouble; 
+                        }
+
+                        // URL
+                        cJSON *download_http = cJSON_GetObjectItemCaseSensitive(artifact, "download-http");
+                        if (cJSON_IsObject(download_http))
+                        {
+                            cJSON *href = cJSON_GetObjectItemCaseSensitive(download_http, "href");
+                            if (cJSON_IsString(href))
+                            {
+                                strncpy(info->download_url, href->valuestring, MAX_URL_SIZE - 1); 
+                            }
+                        }
+
+                        Status = STATUS_OK; 
+                    }
+                    else
+                    {
+                        printf("artifact is not an object \n"); 
+                        Status = STATUS_NOK; 
+                    }
+                }
+                else
+                {
+                    printf("artifacts is not an array \n"); 
+                    Status = STATUS_NOK; 
+                }
+            }
+            else
+            {
+                printf("chunks not found \n"); 
+                Status = STATUS_NOK; 
+            }
+        }
+        else
+        {
+            Status = STATUS_NOK; 
+        }
+    }
+    else
+    {
+        Status = STATUS_NOK; 
+    }
+    cJSON_Delete(root); 
+
+    return Status; 
 
 }
