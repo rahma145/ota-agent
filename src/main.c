@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
     if (status == STATUS_OK)
     {
         printf ("hawkbit poll OK and response = %s \n", response.data);
+        href = malloc(HREF_LEN * sizeof(char)); 
         status = hawkbit_has_update(response.data, href, HREF_LEN);
         if (status == STATUS_OK)
         {
