@@ -93,7 +93,7 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
             {
                 if (cJSON_IsString(item) && (item->valuestring != NULL))
                 {
-                    snprintf(href_out, href_len, item->valuestring);
+                    memcpy(href_out, item->valuestring, href_len);
                     Status = STATUS_OK;  
                 }
                 else
