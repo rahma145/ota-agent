@@ -6,6 +6,8 @@
 #include "log.h"
 #include "hawkbit.h"
 
+#define HREF_LEN 256 
+
 struct ctx { int done; int result; };
 
 static int print_properry(sd_bus *bus, const char *name, char **RetValue) {
@@ -118,13 +120,13 @@ int main(int argc, char *argv[])
 
     struct buf response = {0}; 
     RetStatus status; 
-    char href[256] = {0}; 
+    char *href = NULL; 
 
     status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
     if (status == STATUS_OK)
     {
         printf ("hawkbit poll OK and response = %s \n", response.data);
-        status = hawkbit_has_update(response.data, href, sizeof(href));
+        status = hawkbit_has_update(response.data, href, HREF_LEN);
         if (status == STATUS_OK)
         {
             printf("update availabe and href = %s \n", href); 
