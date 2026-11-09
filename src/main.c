@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
                 printf("deployement info = %s \n", response2.data); 
                 struct artifact_info info = {0}; 
                 status = hawkbit_parse_deployment(response2.data, &info); 
-                if (status)
+                if (status == STATUS_OK)
                 {
                     printf("filename = %s \n", info.filename);
                     printf("sha256 = %s \n", info.sha256); 
