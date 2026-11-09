@@ -177,6 +177,10 @@ RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
                         if(cJSON_IsString(filename))
                         {
                             printf("filename is a string \n"); 
+                            if (info->filename == NULL)
+                            {
+                                printf("filename is NULL \n"); 
+                            }
                             snprintf(info->filename, MAX_FILENAME_SIZE - 1, "%s", filename->valuestring); 
                         }
 
