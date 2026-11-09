@@ -181,7 +181,7 @@ RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
                             {
                                 printf("filename is NULL \n"); 
                             }
-                            snprintf(info->filename, MAX_FILENAME_SIZE - 1, "%s", filename->valuestring); 
+                            strncpy(info->filename, filename->valuestring, MAX_FILENAME_SIZE - 1); 
                         }
 
                         // sha256

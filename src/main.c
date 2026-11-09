@@ -138,14 +138,14 @@ int main(int argc, char *argv[])
             if (status == STATUS_OK)
             {
                 printf("deployement info = %s \n", response2.data); 
-                struct artifact_info *info = {0}; 
-                status = hawkbit_parse_deployment(response2.data, info); 
+                struct artifact_info info = {0}; 
+                status = hawkbit_parse_deployment(response2.data, &info); 
                 if (status)
                 {
-                    printf("filename = %s \n", info->filename);
-                    printf("sha256 = %s \n", info->sha256); 
-                    printf("size = %d \n", info->size); 
-                    printf("download url = %s \n", info->download_url); 
+                    printf("filename = %s \n", info.filename);
+                    printf("sha256 = %s \n", info.sha256); 
+                    printf("size = %ld \n", info.size); 
+                    printf("download url = %s \n", info.download_url); 
                 }
                 else
                 {
