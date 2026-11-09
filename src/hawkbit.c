@@ -171,10 +171,12 @@ RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
                     cJSON *artifact = cJSON_GetArrayItem(artifacts_array, 0); 
                     if (cJSON_IsObject(artifact))
                     {
+                        printf("artifact is an object \n"); 
                         // Filename
                         cJSON *filename = cJSON_GetObjectItemCaseSensitive(artifact, "filename");
                         if(cJSON_IsString(filename))
                         {
+                            printf("filename is a string \n"); 
                             strncpy(info->filename, filename->valuestring, MAX_FILENAME_SIZE - 1); 
                         }
 
@@ -182,9 +184,11 @@ RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
                         cJSON *hashes = cJSON_GetObjectItemCaseSensitive(artifact, "hashes");
                         if (cJSON_IsObject(hashes))
                         {
-                            cJSON *sha256 = cJSON_GetObjectItemCaseSensitive(hashes, "hashes");
+                            printf("hashes is a string \n");
+                            cJSON *sha256 = cJSON_GetObjectItemCaseSensitive(hashes, "sha256");
                             if (cJSON_IsString(sha256))
                             {
+                                printf("sha256 is a string \n"); 
                                 strncpy(info->sha256, sha256->valuestring, MAX_SHA_SIZE - 1); 
                             }
                         }
@@ -193,17 +197,26 @@ RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
                         cJSON *size = cJSON_GetObjectItemCaseSensitive(artifact, "size");
                         if (cJSON_IsNumber(size))
                         {
+                            printf("size is a number \n"); 
                             info->size = size->valuedouble; 
                         }
 
                         // URL
-                        cJSON *download_http = cJSON_GetObjectItemCaseSensitive(artifact, "download-http");
-                        if (cJSON_IsObject(download_http))
+                        cJSON *links = cJSON_GetObjectItemCaseSensitive(artifact, "_links");
+                        if (cJSON_IsObject(links))
                         {
-                            cJSON *href = cJSON_GetObjectItemCaseSensitive(download_http, "href");
-                            if (cJSON_IsString(href))
+                            printf("links is an object \n"); 
+                            cJSON *download_http = cJSON_GetObjectItemCaseSensitive(links, "download-http");
+                            if (cJSON_IsObject(download_http))
                             {
-                                strncpy(info->download_url, href->valuestring, MAX_URL_SIZE - 1); 
+                                printf("download_http is an object \n"); 
+                                cJSON *href = cJSON_GetObjectItemCaseSensitive(download_http, "href");
+                                if (cJSON_IsString(href))
+                                {
+                                    printf("href is a string \n"); 
+                                    strncpy(info->download_url, href->valuestring, MAX_URL_SIZE - 1);
+                                }
+                                 
                             }
                         }
 
