@@ -29,6 +29,7 @@ RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *con
 RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_len); 
 RetStatus hawkbit_get(const char *url, const char *token, struct buf *out);
 RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info); 
+RetStatus hawkbit_download(const char *url, const char *token, const char *dest_path);
 
 
 

@@ -20,6 +20,12 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
     return data_len ; 
 }
 
+static size_t write_file_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
+{
+    FILE *f = userdata;
+    return fwrite(ptr, size, nmemb, f);
+}
+
 RetStatus hawkbit_poll(const char *base_url, const char *tenant, const char *controller_id, const char *token, struct buf *out)
 {
     char url[512]; 
@@ -257,4 +263,73 @@ RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info)
 
     return Status; 
 
+}
+
+RetStatus hawkbit_download(const char *url, const char *token, const char *dest_path)
+{
+    RetStatus Status = STATUS_OK; 
+
+    FILE *f = fopen(dest_path, "wb");
+    if (f) 
+    {
+        char auth_header[300]; 
+        curl_global_init(CURL_GLOBAL_ALL);
+        CURL *h = curl_easy_init(); 
+
+        snprintf(auth_header, sizeof(auth_header), "Authorization: TargetToken %s -o %s", token, dest_path); 
+
+        if (h)
+        {
+            printf("Creating the handle OK \n"); 
+            struct curl_slist *headers = NULL;
+            headers = curl_slist_append(headers, auth_header);
+
+            curl_easy_setopt(h, CURLOPT_URL, url);
+            curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, write_file_cb);
+            curl_easy_setopt(h, CURLOPT_WRITEDATA, f);
+
+            CURLcode result; 
+            result = curl_easy_perform(h); 
+
+            if (result == CURLE_OK)
+            {
+                printf("Executing http request OK \n"); 
+                long code = 0; 
+                curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code); 
+                if (code == CODE_RESPONSE_OK)
+                {
+                    printf("Getting info OK \n"); 
+                    Status = STATUS_OK; 
+                }
+                else 
+                {
+                    printf("Getting info NOK \n");
+                    Status = STATUS_NOK; 
+                }
+            }
+            else 
+            {
+                printf("Executing http request NOK and curl code = %d and url = %s \n", result,url); 
+                Status = STATUS_NOK; 
+            }
+            curl_slist_free_all(headers); 
+        }
+        else
+        {
+            printf("Creating the handle NOK \n"); 
+            Status = STATUS_NOK; 
+        }
+
+        curl_easy_cleanup(h); 
+        curl_global_cleanup();
+
+    }
+    else
+    {
+        Status = STATUS_NOK; 
+    }
+    fclose(f); 
+
+    return Status;
 }

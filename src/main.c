@@ -146,6 +146,17 @@ int main(int argc, char *argv[])
                     printf("sha256 = %s \n", info.sha256); 
                     printf("size = %ld \n", info.size); 
                     printf("download url = %s \n", info.download_url); 
+
+                    //downloading the bundle
+                    status = hawkbit_download(info.download_url, argv[4], "/data/update.raucb");
+                    if (status == STATUS_OK)
+                    {
+                        printf("downloaded successfully \n"); 
+                    } 
+                    else
+                    {
+                        printf("error while downloading \n"); 
+                    }
                 }
                 else
                 {
