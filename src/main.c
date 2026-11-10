@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
+#include <sys/stat.h>
 #include "log.h"
 #include "hawkbit.h"
 
@@ -152,6 +153,13 @@ int main(int argc, char *argv[])
                     if (status == STATUS_OK)
                     {
                         printf("downloaded successfully \n"); 
+                        // Verifying the size 
+                        struct stat st;
+                        if (stat("/data/update.raucb", &st) == 0 && st.st_size == info.size) {
+                            printf("Taille OK : %ld octets\n", st.st_size);
+                        } else {
+                            printf("Taille incorrecte !\n");
+                        }
                     } 
                     else
                     {

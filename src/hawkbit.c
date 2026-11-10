@@ -288,7 +288,6 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
             curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
             curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, write_file_cb);
             curl_easy_setopt(h, CURLOPT_WRITEDATA, f);
-            curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
 
             CURLcode result; 
             result = curl_easy_perform(h); 
