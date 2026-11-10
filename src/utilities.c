@@ -24,7 +24,7 @@ RetStatusUtilities calculate_sha256(const char *file_path, char *sha256_hex)
             if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) == 1)
             {
                 // Read file by bloc and update hash 
-                while (bytes_read = fread(buffer, 1, sizeof(buffer), file) > 0)
+                while ((bytes_read = fread(buffer, 1, sizeof(buffer), file) > 0))
                 {
                     EVP_DigestUpdate(ctx, buffer, bytes_read);
                 }
