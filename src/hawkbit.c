@@ -277,7 +277,7 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
         curl_global_init(CURL_GLOBAL_ALL);
         CURL *h = curl_easy_init(); 
 
-        snprintf(auth_header, sizeof(auth_header), "Authorization: TargetToken %s -o %s", token, dest_path); 
+        snprintf(auth_header, sizeof(auth_header), "Authorization: TargetToken %s", token); 
 
         if (h)
         {
