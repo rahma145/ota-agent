@@ -297,7 +297,7 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
             {
                 printf("Executing http request OK \n"); 
                 long code = 0; 
-                curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code); 
+                CURLcode info_res = curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code); 
                 if (code == CODE_RESPONSE_OK)
                 {
                     printf("Getting info OK \n"); 
@@ -305,7 +305,8 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
                 }
                 else 
                 {
-                    printf("Getting info NOK \n");
+                    printf("Getting info NOK avec code = %ld \n", code);
+                    fprintf(stderr, "curl_easy_getinfo failed: %s\n", curl_easy_strerror(info_res));
                     Status = STATUS_NOK; 
                 }
             }
