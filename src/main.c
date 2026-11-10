@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "log.h"
 #include "hawkbit.h"
+#include "utilities.h"
 
 #define HREF_LEN 512
 
@@ -157,7 +158,19 @@ int main(int argc, char *argv[])
                         struct stat st;
                         if (stat("/data/update.raucb", &st) == 0 && st.st_size == info.size) {
                             printf("Taille OK : %ld octets\n", st.st_size);
-                        } else {
+                            char sha256[65]; 
+                            status = calculate_sha256("/data/update.raucb", sha256); 
+                            if (status == STATUS_OK)
+                            {
+                                printf ("sha256 = %s \n", sha256); 
+                            }
+                            else
+                            {
+                                printf("error while calculating sha256 \n"); 
+                            }
+
+                        } 
+                        else {
                             printf("Taille incorrecte !\n");
                         }
                     } 

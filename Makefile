@@ -2,7 +2,7 @@
 #PKG_CONFIG ?= pkg-config
 
 # --- Bibliothèques ---
-LIBS ?= libsystemd libcurl libcjson
+LIBS ?= libsystemd libcurl libcjson libcrypto
 # LIBS   ?= libsystemd libcurl libcjson libcrypto
 
 # --- Options ---
@@ -23,7 +23,7 @@ DESTDIR ?=
 all: $(BIN)
 
 $(BIN): $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(OBJ) -lsystemd -lcurl -lcjson
+	$(CC) $(LDFLAGS) -o $@ $(OBJ) -lsystemd -lcurl -lcjson -lcrypto
 
 build/%.o: src/%.c | build
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
