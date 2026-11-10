@@ -23,6 +23,7 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 static size_t write_file_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
     FILE *f = userdata;
+    printf("executing the callback ptr = %s", ptr); 
     return fwrite(ptr, size, nmemb, f);
 }
 
@@ -295,7 +296,18 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
             if (result == CURLE_OK)
             {
                 printf("Executing http request OK \n"); 
-                Status = STATUS_OK; 
+                long code = 0; 
+                curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code); 
+                if (code == CODE_RESPONSE_OK)
+                {
+                    printf("Getting info OK \n"); 
+                    Status = STATUS_OK; 
+                }
+                else 
+                {
+                    printf("Getting info NOK \n");
+                    Status = STATUS_NOK; 
+                }
             }
             else 
             {
