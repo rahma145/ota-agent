@@ -22,8 +22,7 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 
 static size_t write_file_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
-    FILE *f = userdata;
-    printf("executing the callback ptr = %s", ptr); 
+    FILE *f = userdata; 
     return fwrite(ptr, size, nmemb, f);
 }
 
