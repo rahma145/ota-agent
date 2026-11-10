@@ -289,6 +289,7 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
             curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
             curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, write_file_cb);
             curl_easy_setopt(h, CURLOPT_WRITEDATA, f);
+            curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
 
             CURLcode result; 
             result = curl_easy_perform(h); 
@@ -297,17 +298,23 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
             {
                 printf("Executing http request OK \n"); 
                 long code = 0; 
-                CURLcode info_res = curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code); 
-                if (code == CODE_RESPONSE_OK)
+                CURLcode info_res = curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code);
+
+                if (info_res != CURLE_OK)
                 {
-                    printf("Getting info OK \n"); 
-                    Status = STATUS_OK; 
+                    fprintf(stderr, "curl_easy_getinfo failed: %s\n",
+                            curl_easy_strerror(info_res));
+                    Status = STATUS_NOK;
                 }
-                else 
+                else if (code == CODE_RESPONSE_OK)
                 {
-                    printf("Getting info NOK avec code = %ld \n", code);
-                    fprintf(stderr, "curl_easy_getinfo failed: %s\n", curl_easy_strerror(info_res));
-                    Status = STATUS_NOK; 
+                    printf("HTTP request successful\n");
+                    Status = STATUS_OK;
+                }
+                else
+                {
+                    printf("HTTP request failed with status code: %ld\n", code);
+                    Status = STATUS_NOK;
                 }
             }
             else 
