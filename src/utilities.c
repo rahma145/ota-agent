@@ -3,10 +3,23 @@
 #include <openssl/evp.h>
 #include "utilities.h"
 
+void print_hash_binary(const unsigned char *hash, unsigned int hash_len)
+{
+    for (unsigned int i = 0; i < hash_len; i++)
+    {
+        for (int bit = 7; bit >= 0; bit--)
+        {
+            printf("%d", (hash[i] >> bit) & 1);
+        }
+
+        printf(" ");
+    }
+
+    printf("\n");
+}
+
 RetStatusUtilities calculate_sha256(const char *file_path, char *sha256_hex)
 {
-    // Test purpose //
-    long bytes_counter = 0; 
     RetStatusUtilities Status = STATUS_OK_UTIL; 
     EVP_MD_CTX *ctx = NULL;
     char buffer[BUFFER_SIZE]; 
@@ -26,18 +39,14 @@ RetStatusUtilities calculate_sha256(const char *file_path, char *sha256_hex)
             if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) == 1)
             {
                 // Read file by bloc and update hash 
-                while ((bytes_read = fread(buffer, 1, sizeof(buffer), file) > 0))
+                while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0)
                 {
-                    bytes_counter++; 
                     EVP_DigestUpdate(ctx, buffer, bytes_read);
                 }
-
-                printf("bytes_counter = %ld \n"); 
 
                 // Finalize hash calculation
                 if (EVP_DigestFinal_ex(ctx, hash, &hash_len))
                 {
-                    printf("binary hash = %s \n", hash); 
                     //Convert binary hash to hexadecimal
                     for (int i = 0; i < SHA256_SIZE; i++) {
                         snprintf(&sha256_hex[i * 2], 3, "%02x", hash[i]);
