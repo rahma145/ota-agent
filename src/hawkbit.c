@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include <cjson/cJSON.h>
 #include "hawkbit.h"
 
 #define MAX_STR_LEN 256
@@ -339,4 +338,77 @@ RetStatus hawkbit_download(const char *url, const char *token, const char *dest_
     fclose(f); 
 
     return Status;
+}
+
+RetStatus hawkbit_send_feedback(const char *url, const char *token, cJSON* json_body)
+{
+    RetStatus Status = STATUS_OK; 
+
+    char auth_header[300]; 
+    char content_type_header[300]; 
+    curl_global_init(CURL_GLOBAL_ALL);
+    CURL *h = curl_easy_init(); 
+
+    snprintf(auth_header, sizeof(auth_header), "Authorization: TargetToken %s", token); 
+    snprintf(content_type_header, sizeof(content_type_header), "Content-Type: application/json");
+
+    if (h)
+    {
+        char *json_str = cJSON_PrintUnformatted(json_body);
+        if (json_str)
+        {
+            printf("Creating the handle OK \n"); 
+            struct curl_slist *headers = NULL;
+            headers = curl_slist_append(headers, auth_header);
+            headers = curl_slist_append(headers, content_type_header);
+
+            curl_easy_setopt(h, CURLOPT_URL, url);
+            curl_easy_setopt(h, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(h, CURLOPT_POSTFIELDS, json_str); 
+            CURLcode result; 
+            result = curl_easy_perform(h); 
+
+            if (result == CURLE_OK)
+            {
+                printf("Executing http request OK \n"); 
+                long code = 0; 
+                CURLcode info_res = curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &code);
+
+                if (info_res != CURLE_OK)
+                {
+                    fprintf(stderr, "curl_easy_getinfo failed: %s\n",
+                            curl_easy_strerror(info_res));
+                    Status = STATUS_NOK;
+                }
+                else
+                {
+                    if (code == 200 || code == 204) { Status = STATUS_OK; }
+                    else { Status = STATUS_NOK; }
+                }
+            }
+            else 
+            {
+                printf("Executing http request NOK and curl code = %d and url = %s \n", result,url); 
+                Status = STATUS_NOK; 
+            }
+            curl_slist_free_all(headers); 
+
+            free(json_str); 
+            json_str = NULL; 
+
+        }
+        else
+        {
+            Status = STATUS_NOK; 
+        }
+    }
+    else
+    {
+        Status = STATUS_NOK; 
+    }
+
+    curl_easy_cleanup(h); 
+    curl_global_cleanup();
+
+    return Status; 
 }

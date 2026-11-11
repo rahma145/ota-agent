@@ -2,6 +2,7 @@
 #define HAWKBIT_H
 
 #include <curl/curl.h>
+#include <cjson/cJSON.h>
 
 #define MAX_FILENAME_SIZE 256
 #define MAX_SHA_SIZE 65
@@ -30,6 +31,7 @@ RetStatus hawkbit_has_update(const char *json_text, char *href_out, size_t href_
 RetStatus hawkbit_get(const char *url, const char *token, struct buf *out);
 RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info); 
 RetStatus hawkbit_download(const char *url, const char *token, const char *dest_path);
+RetStatus hawkbit_send_feedback(const char *url, const char *token, cJSON* json_body); 
 
 
 
