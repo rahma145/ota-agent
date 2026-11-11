@@ -5,6 +5,8 @@
 
 RetStatusUtilities calculate_sha256(const char *file_path, char *sha256_hex)
 {
+    // Test purpose //
+    long bytes_counter = 0; 
     RetStatusUtilities Status = STATUS_OK_UTIL; 
     EVP_MD_CTX *ctx = NULL;
     char buffer[BUFFER_SIZE]; 
@@ -26,9 +28,11 @@ RetStatusUtilities calculate_sha256(const char *file_path, char *sha256_hex)
                 // Read file by bloc and update hash 
                 while ((bytes_read = fread(buffer, 1, sizeof(buffer), file) > 0))
                 {
-                    printf("bytes_read = %ld", bytes_read); 
+                    bytes_counter++; 
                     EVP_DigestUpdate(ctx, buffer, bytes_read);
                 }
+
+                printf("bytes_counter = %ld \n"); 
 
                 // Finalize hash calculation
                 if (EVP_DigestFinal_ex(ctx, hash, &hash_len))
