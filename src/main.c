@@ -163,6 +163,10 @@ int main(int argc, char *argv[])
                             if (status == STATUS_OK)
                             {
                                 printf ("sha256 = %s \n", sha256); 
+                                if ((strcmp(sha256, info.sha256)) == 0)
+                                {
+                                    printf("sha256 OK \n"); 
+                                }
                             }
                             else
                             {
