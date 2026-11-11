@@ -26,13 +26,15 @@ RetStatusUtilities calculate_sha256(const char *file_path, char *sha256_hex)
                 // Read file by bloc and update hash 
                 while ((bytes_read = fread(buffer, 1, sizeof(buffer), file) > 0))
                 {
+                    printf("bytes_read = %ld", bytes_read); 
                     EVP_DigestUpdate(ctx, buffer, bytes_read);
                 }
 
                 // Finalize hash calculation
                 if (EVP_DigestFinal_ex(ctx, hash, &hash_len))
                 {
-                    /* 6. Convert binary hash to hexadecimal */
+                    printf("binary hash = %s \n", hash); 
+                    //Convert binary hash to hexadecimal
                     for (int i = 0; i < SHA256_SIZE; i++) {
                         snprintf(&sha256_hex[i * 2], 3, "%02x", hash[i]);
                     }
