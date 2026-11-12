@@ -432,16 +432,19 @@ RetStatus hawkbit_build_feedback_json(const char *execution, const char *finishe
             }
             else
             {
+                printf("error creating result object \n"); 
                 Status = STATUS_NOK; 
             }
         }
         else
         {
+            printf("error creating status object \n"); 
             Status = STATUS_NOK; 
         }
     }
     else
     {
+        printf("error creating object json \n"); 
         Status = STATUS_NOK; 
     }
 
