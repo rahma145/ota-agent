@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
                                     printf("sha256 OK \n"); 
                                     cJSON* FeedBackObject = NULL; 
                                     status = hawkbit_build_feedback_json("proceeding", "none", &FeedBackObject); 
-                                    if (status = STATUS_OK)
+                                    if (status == STATUS_OK)
                                     {
                                         status = hawkbit_send_feedback(argv[1], argv[4], FeedBackObject); 
                                         if (status == STATUS_OK)
