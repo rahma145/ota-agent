@@ -170,8 +170,9 @@ int main(int argc, char *argv[])
                                     status = hawkbit_build_feedback_json("proceeding", "none", &FeedBackObject); 
                                     if (status == STATUS_OK)
                                     {
-                                        char *feedback_url = NULL; 
-                                        snprintf(feedback_url, sizeof(url), "%s/%s/controller/v1/%s/deploymentBase/1/feedback", argv[1], argv[2], argv[3]); 
+                                        char feedback_url[200]; 
+                                        // snprintf(feedback_url, sizeof(url), "%s/%s/controller/v1/%s/deploymentBase/1/feedback", argv[1], argv[2], argv[3]);
+                                        snprintf(feedback_url, sizeof(url), "%s/", argv[1]); 
                                         printf("feed back url = %s \n", feedback_url); 
                                         status = hawkbit_send_feedback(argv[1], argv[4], FeedBackObject); 
                                         if (status == STATUS_OK)
