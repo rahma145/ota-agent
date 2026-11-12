@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
                                         char feedback_url[200]; 
                                         snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%s/deploymentBase/1/feedback", argv[1], argv[2], argv[3]);
                                         printf("feed back url = %s \n", feedback_url); 
-                                        status = hawkbit_send_feedback(argv[1], argv[4], FeedBackObject); 
+                                        status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
                                         if (status == STATUS_OK)
                                         {
                                             printf("sending feedback OK \n"); 
@@ -184,8 +184,7 @@ int main(int argc, char *argv[])
                                         }
                                         if(FeedBackObject)
                                         {
-                                            free(FeedBackObject); 
-                                            FeedBackObject = NULL; 
+                                            cJSON_Delete(FeedBackObject); 
                                         }
                                     }
                                     else
