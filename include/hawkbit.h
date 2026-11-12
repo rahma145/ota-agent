@@ -32,6 +32,7 @@ RetStatus hawkbit_get(const char *url, const char *token, struct buf *out);
 RetStatus hawkbit_parse_deployment(char* response, struct artifact_info* info); 
 RetStatus hawkbit_download(const char *url, const char *token, const char *dest_path);
 RetStatus hawkbit_send_feedback(const char *url, const char *token, cJSON* json_body); 
+RetStatus hawkbit_build_feedback_json(const char *execution, const char *finished, cJSON **object); 
 
 
 

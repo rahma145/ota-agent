@@ -412,3 +412,38 @@ RetStatus hawkbit_send_feedback(const char *url, const char *token, cJSON* json_
 
     return Status; 
 }
+
+RetStatus hawkbit_build_feedback_json(const char *execution, const char *finished, cJSON **object)
+{
+    RetStatus Status = STATUS_OK; 
+    *object= cJSON_CreateObject(); 
+    if (*object)
+    {
+        cJSON *StatusObject = cJSON_CreateObject();
+        if (StatusObject)
+        {
+            cJSON_AddStringToObject(StatusObject, "execution", execution); 
+            cJSON *ResultObject = cJSON_CreateObject();
+            if (ResultObject)
+            {
+                cJSON_AddStringToObject(ResultObject, "finished", finished); 
+                cJSON_AddItemToObject(StatusObject, "result", ResultObject); 
+                cJSON_AddItemToObject(*object, "status", StatusObject); 
+            }
+            else
+            {
+                Status = STATUS_NOK; 
+            }
+        }
+        else
+        {
+            Status = STATUS_NOK; 
+        }
+    }
+    else
+    {
+        Status = STATUS_NOK; 
+    }
+
+    return Status; 
+}

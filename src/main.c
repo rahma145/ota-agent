@@ -166,6 +166,25 @@ int main(int argc, char *argv[])
                                 if ((strcmp(sha256, info.sha256)) == 0)
                                 {
                                     printf("sha256 OK \n"); 
+                                    cJSON* FeedBackObject = NULL; 
+                                    status = hawkbit_build_feedback_json("proceeding", "none", &FeedBackObject); 
+                                    if (status = STATUS_OK)
+                                    {
+                                        status = hawkbit_send_feedback(argv[1], argv[4], FeedBackObject); 
+                                        if (status == STATUS_OK)
+                                        {
+                                            printf("sending feedback OK \n"); 
+                                        }
+                                        else
+                                        {
+                                            printf("sending feedback NOK \n"); 
+                                        }
+                                        if(FeedBackObject)
+                                        {
+                                            free(FeedBackObject); 
+                                            FeedBackObject = NULL; 
+                                        }
+                                    }
                                 }
                             }
                             else
