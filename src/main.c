@@ -185,6 +185,10 @@ int main(int argc, char *argv[])
                                             FeedBackObject = NULL; 
                                         }
                                     }
+                                    else
+                                    {
+                                        printf("error building the json object \n"); 
+                                    }
                                 }
                             }
                             else
