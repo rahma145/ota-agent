@@ -203,7 +203,6 @@ int main(int argc, char *argv[])
      /*************** hawkbit *******************************/
 
     status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
-    sleep(5); 
     if (status == STATUS_OK)
     {
         printf ("hawkbit poll OK and response = %s \n", response.data);
@@ -372,5 +371,5 @@ int main(int argc, char *argv[])
 
 
 
-    return ctx.result == 0 ? 0 : 1;
+    return status;
 }
