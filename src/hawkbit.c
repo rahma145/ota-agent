@@ -450,3 +450,17 @@ RetStatus hawkbit_build_feedback_json(const char *execution, const char *finishe
 
     return Status; 
 }
+
+
+RetStatus hawkbit_extract_action_id(const char *href, long *action_id)
+{
+    int lus = sscanf(href, "%*[^/]//%*[^/]/%*[^/]/%*[^/]/%*[^/]/%*[^/]/%*[^/]/%ld", action_id);
+    if(lus == 1)
+    {
+        return STATUS_OK; 
+    }
+    else
+    {
+        return STATUS_NOK; 
+    }
+}
