@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
                                             printf("error extracting the action id ! \n"); 
                                         }
                                         char feedback_url[200]; 
-                                        snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%ld/deploymentBase/%d/feedback", argv[1], argv[2], action_id, argv[3]);
+                                        snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%s/deploymentBase/%ld/feedback", argv[1], argv[2], argv[3], action_id);
                                         printf("feed back url = %s \n", feedback_url); 
                                         status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
                                         if (status == STATUS_OK)
