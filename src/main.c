@@ -270,9 +270,20 @@ int main(int argc, char *argv[])
                                         if (ret > 0) continue; 
 
                                     }
-
                                     cJSON* FeedBackObject = NULL; 
-                                    status = hawkbit_build_feedback_json("proceeding", "none", &FeedBackObject); 
+                                    if(ctx.result == 0)
+                                    {
+                                        printf("building feedback json with finished = success \n"); 
+                                        status = hawkbit_build_feedback_json("closed", "success", &FeedBackObject);
+                                    }
+                                    else
+                                    {
+                                        printf("building feedback json with finished = failure \n"); 
+                                        status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
+                                    }
+
+                                    
+                                     
                                     if (status == STATUS_OK)
                                     {
                                         //extracting action id (to use it in feedback url)
