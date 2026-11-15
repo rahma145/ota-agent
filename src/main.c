@@ -238,8 +238,10 @@ int main(int argc, char *argv[])
                             printf("Taille OK : %ld octets\n", st.st_size);
                             char sha256[65]; 
                             status = calculate_sha256("/data/update.raucb", sha256); 
+                            
                             if (status == STATUS_OK)
                             {
+                                cJSON* FeedBackObject = NULL; 
                                 printf ("sha256 = %s \n", sha256); 
                                 if ((strcmp(sha256, info.sha256)) == 0)
                                 {
@@ -270,7 +272,7 @@ int main(int argc, char *argv[])
                                         if (ret > 0) continue; 
 
                                     }
-                                    cJSON* FeedBackObject = NULL; 
+                                    
                                     if(ctx.result == 0)
                                     {
                                         printf("building feedback json with finished = success \n"); 
@@ -309,15 +311,20 @@ int main(int argc, char *argv[])
                                         {
                                             printf("sending feedback NOK \n"); 
                                         }
-                                        if(FeedBackObject)
-                                        {
-                                            cJSON_Delete(FeedBackObject); 
-                                        }
                                     }
                                     else
                                     {
                                         printf("error building the json object \n"); 
                                     }
+                                }
+                                else 
+                                {
+                                    printf("building feedback json with finished = failure \n"); 
+                                    status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
+                                }
+                                if(FeedBackObject)
+                                {
+                                    cJSON_Delete(FeedBackObject); 
                                 }
                             }
                             else
