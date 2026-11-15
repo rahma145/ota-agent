@@ -242,6 +242,20 @@ int main(int argc, char *argv[])
                             if (status == STATUS_OK)
                             {
                                 cJSON* FeedBackObject = NULL; 
+                                char feedback_url[200]; 
+                                //extracting action id (to use it in feedback url)
+                                long action_id = 0; 
+                                status = hawkbit_extract_action_id(href, &action_id);
+                                if (status == STATUS_OK)
+                                {
+                                    printf("action id = %ld \n", action_id); 
+                                }
+                                else
+                                {
+                                    printf("error extracting the action id ! \n"); 
+                                }
+                                snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%s/deploymentBase/%ld/feedback", argv[1], argv[2], argv[3], action_id);
+                                printf("feed back url = %s \n", feedback_url); 
                                 printf ("sha256 = %s \n", sha256); 
                                 if ((strcmp(sha256, info.sha256)) == 0)
                                 {
@@ -288,20 +302,7 @@ int main(int argc, char *argv[])
                                      
                                     if (status == STATUS_OK)
                                     {
-                                        //extracting action id (to use it in feedback url)
-                                        long action_id = 0; 
-                                        status = hawkbit_extract_action_id(href, &action_id);
-                                        if (status == STATUS_OK)
-                                        {
-                                            printf("action id = %ld \n", action_id); 
-                                        }
-                                        else
-                                        {
-                                            printf("error extracting the action id ! \n"); 
-                                        }
-                                        char feedback_url[200]; 
-                                        snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%s/deploymentBase/%ld/feedback", argv[1], argv[2], argv[3], action_id);
-                                        printf("feed back url = %s \n", feedback_url); 
+
                                         status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
                                         if (status == STATUS_OK)
                                         {
@@ -321,6 +322,10 @@ int main(int argc, char *argv[])
                                 {
                                     printf("building feedback json with finished = failure \n"); 
                                     status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
+                                    if (status == STATUS_OK)
+                                    {
+                                        hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
+                                    }
                                 }
                                 if(FeedBackObject)
                                 {
