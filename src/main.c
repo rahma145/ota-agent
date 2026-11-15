@@ -124,6 +124,84 @@ int main(int argc, char *argv[])
     RetStatus status; 
     char *href = NULL; 
 
+
+    /*************** DBUS *******************************/
+
+
+        //Connexion to the system dbus
+    ret = sd_bus_open_system(&bus); 
+    if (ret < 0)
+    {
+        printf("error while connecting to the dbus system \n"); 
+        return ret; 
+    }
+    else
+    {
+        printf("Connected to the system dbus successfully ! \n"); 
+    }
+
+    /* Read BootSlot Property */
+    ret = print_properry(bus, "BootSlot", &RetValue);
+    if (ret < 0)
+    {
+        printf("error while getting BootSlot property \n"); 
+        return log_error(ret, "BootSlot property failed");
+    }
+    else
+    {
+        printf("BootSlot = %s \n", RetValue);
+    }
+
+    /* Read Operation Property */
+    ret = print_properry(bus, "Operation", &RetValue);
+    if (ret < 0)
+    {
+        printf("error while getting Operation property \n"); 
+        return log_error(ret, "Operation property failed");
+    }
+    else
+    {
+        printf("Operation = %s \n", RetValue);
+    }
+
+    /* Read Compatible Property */
+    ret = print_properry(bus, "Compatible", &RetValue);
+    if (ret < 0)
+    {
+        printf("error while getting Compatible property \n"); 
+        return log_error(ret, "Compatible property failed");
+    }
+    else
+    {
+        printf("Compatible = %s \n", RetValue);
+    }
+
+    /* Match to the signal Completed */
+    ret = sd_bus_match_signal(bus, NULL, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "Completed", (void*)on_Completed, &ctx);
+    if (ret < 0)
+    {
+        printf("error while matching the signal Completed \n");
+        return log_error(ret, "Completed signal match failed");
+    }   
+    else
+    {
+        printf("Completed signal matched successfully ! \n");
+    }
+
+    /* Match to the signal PropertiesChanged */
+    ret = sd_bus_match_signal(bus, NULL, "de.pengutronix.rauc", "/", "org.freedesktop.DBus.Properties", "PropertiesChanged", (void*)on_props_changed, NULL);
+    if (ret < 0)
+    {
+        printf("error while matching the signal PropertiesChanged \n");
+        return log_error(ret, "PropertiesChanged signal match failed");
+    }
+    else
+    {
+        printf("PropertiesChanged signal matched successfully ! \n");
+    }
+
+     /*************** hawkbit *******************************/
+
     status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
     sleep(5); 
     if (status == STATUS_OK)
@@ -166,6 +244,33 @@ int main(int argc, char *argv[])
                                 if ((strcmp(sha256, info.sha256)) == 0)
                                 {
                                     printf("sha256 OK \n"); 
+
+                                    /* Install the bundle */
+                                    
+                                    ret = sd_bus_call_method(bus, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "InstallBundle", NULL, &message, "sa{sv}", "/data/update.raucb", 0);
+                                    if (ret < 0)
+                                    {
+                                        printf("error while calling InstallBundle method \n");
+                                        return log_error(ret, "InstallBundle method call failed");
+                                    }
+                                    else
+                                    {
+                                        printf("InstallBundle method called successfully ! \n");
+                                    }
+                                    
+
+                                    while(!ctx.done)
+                                    {
+                                        ret = sd_bus_process(bus, NULL);
+                                        if (ret == 0)
+                                        {
+                                            sd_bus_wait(bus, UINT64_MAX);
+                                        }
+                                        if (ret < 0) break;
+                                        if (ret > 0) continue; 
+
+                                    }
+
                                     cJSON* FeedBackObject = NULL; 
                                     status = hawkbit_build_feedback_json("proceeding", "none", &FeedBackObject); 
                                     if (status == STATUS_OK)
@@ -240,109 +345,9 @@ int main(int argc, char *argv[])
         printf ("hawkbit poll NOK ! \n"); 
     }
 
-    //Connexion to the system dbus
-    ret = sd_bus_open_system(&bus); 
-    if (ret < 0)
-    {
-        printf("error while connecting to the dbus system \n"); 
-        return ret; 
-    }
-    else
-    {
-        printf("Connected to the system dbus successfully ! \n"); 
-    }
 
-    /* Read BootSlot Property */
-    ret = print_properry(bus, "BootSlot", &RetValue);
-    if (ret < 0)
-    {
-        printf("error while getting BootSlot property \n"); 
-        return log_error(ret, "BootSlot property failed");
-    }
-    else
-    {
-        printf("BootSlot = %s \n", RetValue);
-    }
 
-    /* Read Operation Property */
-    ret = print_properry(bus, "Operation", &RetValue);
-    if (ret < 0)
-    {
-        printf("error while getting Operation property \n"); 
-        return log_error(ret, "Operation property failed");
-    }
-    else
-    {
-        printf("Operation = %s \n", RetValue);
-    }
 
-    /* Read Compatible Property */
-    ret = print_properry(bus, "Compatible", &RetValue);
-    if (ret < 0)
-    {
-        printf("error while getting Compatible property \n"); 
-        return log_error(ret, "Compatible property failed");
-    }
-    else
-    {
-        printf("Compatible = %s \n", RetValue);
-    }
-
-    /* Match to the signal Completed */
-    ret = sd_bus_match_signal(bus, NULL, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "Completed", (void*)on_Completed, &ctx);
-    if (ret < 0)
-    {
-        printf("error while matching the signal Completed \n");
-        return log_error(ret, "Completed signal match failed");
-    }   
-    else
-    {
-        printf("Completed signal matched successfully ! \n");
-    }
-
-    /* Match to the signal PropertiesChanged */
-    ret = sd_bus_match_signal(bus, NULL, "de.pengutronix.rauc", "/", "org.freedesktop.DBus.Properties", "PropertiesChanged", (void*)on_props_changed, NULL);
-    if (ret < 0)
-    {
-        printf("error while matching the signal PropertiesChanged \n");
-        return log_error(ret, "PropertiesChanged signal match failed");
-    }
-    else
-    {
-        printf("PropertiesChanged signal matched successfully ! \n");
-    }
-
-    /* Install the bundle */
-    if (argv[1] != NULL)
-    {
-        ret = sd_bus_call_method(bus, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "InstallBundle", NULL, &message, "sa{sv}", argv[1], 0);
-        if (ret < 0)
-        {
-            printf("error while calling InstallBundle method \n");
-            return log_error(ret, "InstallBundle method call failed");
-        }
-        else
-        {
-            printf("InstallBundle method called successfully ! \n");
-        }
-    }
-    else
-    {
-        printf("Please provide the bundle path as an argument \n");
-        return -1; 
-    }
-
-    while(!ctx.done)
-    {
-        ret = sd_bus_process(bus, NULL);
-        if (ret == 0)
-        {
-            sd_bus_wait(bus, UINT64_MAX);
-        }
-        if (ret < 0) break;
-        if (ret > 0) continue; 
-
-    }
 
     return ctx.result == 0 ? 0 : 1;
 }
