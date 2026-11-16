@@ -1,0 +1,15 @@
+#ifndef STATE_H
+#define STATE_H
+
+typedef enum {
+    STATE_IDLE = 0, 
+    STATE_UPDATE_AVAILABLE,
+    STATE_DOWNLOADING,
+    STATE_VALIDATING, 
+    STATE_INSTALLING, 
+    STATE_REBOOT_PENDING,
+    STATE_ERROR 
+
+} State; 
+
+#endif //STATE_H

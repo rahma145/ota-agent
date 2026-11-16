@@ -7,6 +7,7 @@
 #include "log.h"
 #include "hawkbit.h"
 #include "utilities.h"
+#include "state.h"
 
 #define HREF_LEN 512
 
@@ -124,6 +125,7 @@ int main(int argc, char *argv[])
     RetStatus status; 
     char *href = NULL; 
 
+    State current_state = STATE_IDLE;
 
     /*************** DBUS *******************************/
 
@@ -210,6 +212,7 @@ int main(int argc, char *argv[])
         status = hawkbit_has_update(response.data, href, HREF_LEN);
         if (status == STATUS_OK)
         {
+            current_state = STATE_UPDATE_AVAILABLE; 
             printf("update availabe and href = %s \n", href); 
             struct buf response2 = {0};
             char *url; 
@@ -221,6 +224,7 @@ int main(int argc, char *argv[])
                 status = hawkbit_parse_deployment(response2.data, &info); 
                 if (status == STATUS_OK)
                 {
+                    current_state = STATE_DOWNLOADING; 
                     printf("filename = %s \n", info.filename);
                     printf("sha256 = %s \n", info.sha256); 
                     printf("size = %ld \n", info.size); 
@@ -235,6 +239,7 @@ int main(int argc, char *argv[])
                         struct stat st;
                         if (stat("/data/update.raucb", &st) == 0 && st.st_size == info.size) {
                             printf("Taille OK : %ld octets\n", st.st_size);
+                            current_state = STATE_VALIDATING; 
                             char sha256[65]; 
                             status = calculate_sha256("/data/update.raucb", sha256); 
                             
@@ -259,6 +264,7 @@ int main(int argc, char *argv[])
                                 if ((strcmp(sha256, info.sha256)) == 0)
                                 {
                                     printf("sha256 OK \n"); 
+                                    current_state = STATE_INSTALLING; 
 
                                     /* Install the bundle */
                                     
@@ -288,11 +294,13 @@ int main(int argc, char *argv[])
                                     
                                     if(ctx.result == 0)
                                     {
+                                        current_state = STATE_REBOOT_PENDING; 
                                         printf("building feedback json with finished = success \n"); 
                                         status = hawkbit_build_feedback_json("closed", "success", &FeedBackObject);
                                     }
                                     else
                                     {
+                                        current_state = STATE_ERROR; 
                                         printf("building feedback json with finished = failure \n"); 
                                         status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
                                     }
@@ -319,6 +327,7 @@ int main(int argc, char *argv[])
                                 }
                                 else 
                                 {
+                                    current_state = STATE_ERROR; 
                                     printf("building feedback json with finished = failure \n"); 
                                     status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
                                     if (status == STATUS_OK)
@@ -338,16 +347,19 @@ int main(int argc, char *argv[])
 
                         } 
                         else {
+                            current_state = STATE_ERROR; 
                             printf("Taille incorrecte !\n");
                         }
                     } 
                     else
                     {
+                        current_state = STATE_ERROR; 
                         printf("error while downloading \n"); 
                     }
                 }
                 else
                 {
+                    current_state = STATE_ERROR; 
                     printf("error parsing the deployment info \n"); 
                 }
             }
@@ -359,11 +371,13 @@ int main(int argc, char *argv[])
         } 
         else 
         {
+            current_state = STATE_IDLE; 
             printf("update not available \n"); 
         }
     }
     else
     {
+        current_state = STATE_IDLE; 
         printf ("hawkbit poll NOK ! \n"); 
     }
 
