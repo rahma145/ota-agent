@@ -342,6 +342,7 @@ int main(int argc, char *argv[])
                             }
                             else
                             {
+                                current_state = STATE_ERROR; 
                                 printf("error while calculating sha256 \n"); 
                             }
 
@@ -365,6 +366,7 @@ int main(int argc, char *argv[])
             }
             else
             {
+                current_state = STATE_ERROR; 
                 printf("No deployment info ! \n"); 
             }
             
