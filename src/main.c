@@ -116,16 +116,23 @@ int main(int argc, char *argv[])
     int ret = 0; 
 
     sd_bus *bus = NULL; 
-    sd_bus_error *bus_error = NULL; 
-    const char *Slot = NULL; 
     sd_bus_message *message = NULL; 
     char *RetValue = NULL;
 
     struct buf response = {0}; 
     RetStatus status; 
-    char *href = NULL; 
+    char href[HREF_LEN]; 
 
     State current_state = STATE_IDLE;
+
+
+    struct buf response2 = {0};
+    struct artifact_info info = {0}; 
+    struct stat st;
+    cJSON* FeedBackObject = NULL; 
+    char feedback_url[200]; 
+    long action_id = 0; 
+    
 
     /*************** DBUS *******************************/
 
@@ -202,185 +209,271 @@ int main(int argc, char *argv[])
         printf("PropertiesChanged signal matched successfully ! \n");
     }
 
-     /*************** hawkbit *******************************/
+    /** STATE MACHINE  **/
 
-    status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
-    if (status == STATUS_OK)
+    int compteur_poll_NOK = 0; 
+    int compteur_update_NOK = 0; 
+
+    while(current_state != STATE_ERROR && current_state != STATE_REBOOT_PENDING)
     {
-        printf ("hawkbit poll OK and response = %s \n", response.data);
-        href = malloc(HREF_LEN * sizeof(char)); 
-        status = hawkbit_has_update(response.data, href, HREF_LEN);
-        if (status == STATUS_OK)
+
+        switch(current_state)
         {
-            current_state = STATE_UPDATE_AVAILABLE; 
-            printf("update availabe and href = %s \n", href); 
-            struct buf response2 = {0};
-            char *url; 
-            status = hawkbit_get(href, argv[4], &response2);
-            if (status == STATUS_OK)
-            {
-                printf("deployement info = %s \n", response2.data); 
-                struct artifact_info info = {0}; 
-                status = hawkbit_parse_deployment(response2.data, &info); 
+            case STATE_IDLE : 
+                printf("executing STATE_IDLE \n"); 
+                status = hawkbit_poll(argv[1], argv[2], argv[3], argv[4], &response); 
                 if (status == STATUS_OK)
                 {
-                    current_state = STATE_DOWNLOADING; 
-                    printf("filename = %s \n", info.filename);
-                    printf("sha256 = %s \n", info.sha256); 
-                    printf("size = %ld \n", info.size); 
-                    printf("download url = %s \n", info.download_url); 
-
-                    //downloading the bundle
-                    status = hawkbit_download(info.download_url, argv[4], "/data/update.raucb");
+                    printf("Poll OK \n"); 
+                    compteur_poll_NOK = 0;
+                    status = hawkbit_has_update(response.data, href, HREF_LEN);
                     if (status == STATUS_OK)
                     {
-                        printf("downloaded successfully \n"); 
-                        // Verifying the size 
-                        struct stat st;
-                        if (stat("/data/update.raucb", &st) == 0 && st.st_size == info.size) {
-                            printf("Taille OK : %ld octets\n", st.st_size);
-                            current_state = STATE_VALIDATING; 
-                            char sha256[65]; 
-                            status = calculate_sha256("/data/update.raucb", sha256); 
-                            
-                            if (status == STATUS_OK)
-                            {
-                                cJSON* FeedBackObject = NULL; 
-                                char feedback_url[200]; 
-                                //extracting action id (to use it in feedback url)
-                                long action_id = 0; 
-                                status = hawkbit_extract_action_id(href, &action_id);
-                                if (status == STATUS_OK)
-                                {
-                                    printf("action id = %ld \n", action_id); 
-                                }
-                                else
-                                {
-                                    printf("error extracting the action id ! \n"); 
-                                }
-                                snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%s/deploymentBase/%ld/feedback", argv[1], argv[2], argv[3], action_id);
-                                printf("feed back url = %s \n", feedback_url); 
-                                printf ("sha256 = %s \n", sha256); 
-                                if ((strcmp(sha256, info.sha256)) == 0)
-                                {
-                                    printf("sha256 OK \n"); 
-                                    current_state = STATE_INSTALLING; 
-
-                                    /* Install the bundle */
-                                    
-                                    ret = sd_bus_call_method(bus, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "InstallBundle", NULL, &message, "sa{sv}", "/data/update.raucb", 0);
-                                    if (ret < 0)
-                                    {
-                                        printf("error while calling InstallBundle method \n");
-                                        return log_error(ret, "InstallBundle method call failed");
-                                    }
-                                    else
-                                    {
-                                        printf("InstallBundle method called successfully ! \n");
-                                    }
-                                    
-
-                                    while(!ctx.done)
-                                    {
-                                        ret = sd_bus_process(bus, NULL);
-                                        if (ret == 0)
-                                        {
-                                            sd_bus_wait(bus, UINT64_MAX);
-                                        }
-                                        if (ret < 0) break;
-                                        if (ret > 0) continue; 
-
-                                    }
-                                    
-                                    if(ctx.result == 0)
-                                    {
-                                        current_state = STATE_REBOOT_PENDING; 
-                                        printf("building feedback json with finished = success \n"); 
-                                        status = hawkbit_build_feedback_json("closed", "success", &FeedBackObject);
-                                    }
-                                    else
-                                    {
-                                        current_state = STATE_ERROR; 
-                                        printf("building feedback json with finished = failure \n"); 
-                                        status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
-                                    }
-
-                                    
-                                     
-                                    if (status == STATUS_OK)
-                                    {
-
-                                        status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
-                                        if (status == STATUS_OK)
-                                        {
-                                            printf("sending feedback OK \n"); 
-                                        }
-                                        else
-                                        {
-                                            printf("sending feedback NOK \n"); 
-                                        }
-                                    }
-                                    else
-                                    {
-                                        printf("error building the json object \n"); 
-                                    }
-                                }
-                                else 
-                                {
-                                    current_state = STATE_ERROR; 
-                                    printf("building feedback json with finished = failure \n"); 
-                                    status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
-                                    if (status == STATUS_OK)
-                                    {
-                                        hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
-                                    }
-                                }
-                                if(FeedBackObject)
-                                {
-                                    cJSON_Delete(FeedBackObject); 
-                                }
-                            }
-                            else
-                            {
-                                current_state = STATE_ERROR; 
-                                printf("error while calculating sha256 \n"); 
-                            }
-
-                        } 
-                        else {
-                            current_state = STATE_ERROR; 
-                            printf("Taille incorrecte !\n");
-                        }
-                    } 
+                        printf("Update OK \n"); 
+                        compteur_update_NOK = 0; 
+                        current_state = STATE_UPDATE_AVAILABLE; 
+                    }
                     else
                     {
+                        printf("Update NOK \n"); 
+                        if (compteur_update_NOK >= 5) current_state = STATE_ERROR; 
+                        else {
+                            compteur_update_NOK++;
+                            memset(response.data, 0,response.len); 
+                            response.len = 0; 
+                            current_state = STATE_IDLE;  
+                            sleep(10);
+                        }
+                    }
+
+                }
+                else
+                {
+                    printf("Poll NOK \n"); 
+                    if (compteur_poll_NOK >= 5) current_state = STATE_ERROR; 
+                    else {
+                        compteur_poll_NOK++; 
+                        memset(response.data, 0,response.len); 
+                        response.len = 0; 
+                        current_state = STATE_IDLE; 
+                        sleep(10); 
+                    }
+                }
+                break ; 
+            case STATE_UPDATE_AVAILABLE: 
+                printf("executing STATE_UPDATE_AVAILABLE \n"); 
+                status = hawkbit_get(href, argv[4], &response2);
+                if (status == STATUS_OK)
+                {
+                    printf("hawkbit get OK \n"); 
+                    status = hawkbit_parse_deployment(response2.data, &info);
+                    if (status == STATUS_OK)
+                    {
+                        printf("parsing deployment OK \n"); 
+                        current_state = STATE_DOWNLOADING; 
+                    }
+                    else
+                    {
+                        printf("parsing deployment NOK \n"); 
                         current_state = STATE_ERROR; 
-                        printf("error while downloading \n"); 
                     }
                 }
                 else
                 {
+                    printf("hawkbit get NOK \n"); 
                     current_state = STATE_ERROR; 
-                    printf("error parsing the deployment info \n"); 
                 }
-            }
-            else
+                break; 
+            case STATE_DOWNLOADING: 
+                printf("executing STATE_DOWNLOADING \n"); 
+                status = hawkbit_download(info.download_url, argv[4], "/data/update.raucb");
+                if (status == STATUS_OK)
+                {
+                    printf("Download OK \n"); 
+                    if (stat("/data/update.raucb", &st) == 0 && st.st_size == info.size) {
+                        printf("file exist and size OK \n"); 
+
+                        // extract action_id
+                        status = hawkbit_extract_action_id(href, &action_id);
+                        if (status != STATUS_OK)
+                        {
+                            printf("error extracting the action id ! \n");
+                            current_state = STATE_ERROR;
+                        }
+                        else
+                        {
+                            printf("extracting action id OK with action_id = %ld \n", action_id); 
+                            snprintf(feedback_url, sizeof(feedback_url), "%s/%s/controller/v1/%s/deploymentBase/%ld/feedback", argv[1], argv[2], argv[3], action_id);
+                            current_state = STATE_VALIDATING; 
+                        }
+                        
+                    }
+                    else
+                    {
+                        printf("file does not exist or size NOK \n"); 
+                        current_state = STATE_ERROR; 
+                    }
+                }
+                else
+                {
+                    printf("Download NOK \n"); 
+                    current_state = STATE_ERROR; 
+                }
+                break; 
+            case STATE_VALIDATING: 
             {
-                current_state = STATE_ERROR; 
-                printf("No deployment info ! \n"); 
+                printf("executing STATE_VALIDATING \n"); 
+                char sha256[65]; 
+                status = calculate_sha256("/data/update.raucb", sha256);
+                if (status == STATUS_OK)
+                {
+                    printf("calculating sha256 OK \n"); 
+                    if ((strcmp(sha256, info.sha256)) == 0)
+                    {
+                        printf("sha256 OK \n"); 
+                        current_state = STATE_INSTALLING; 
+                    }
+                    else
+                    {
+                        printf("sha256 NOK \n"); 
+                        current_state = STATE_ERROR; 
+                        printf("building feedback json with finished = failure \n"); 
+                        status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
+                        if (status == STATUS_OK)
+                        {
+                            status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
+                            if (status == STATUS_NOK)
+                            {
+                                printf("error sending feedback for sha256 error \n"); 
+                            }
+                        }
+                        else
+                        {
+                            printf("error building the json object for sha256 feedback \n"); 
+                        }
+                    }
+                }
+                else
+                {
+                    printf("executing sha256 NOK \n"); 
+                    current_state = STATE_ERROR; 
+                }
+                if(FeedBackObject)
+                {
+                    cJSON_Delete(FeedBackObject); 
+                }
+
+                break; 
             }
-            
-        } 
-        else 
-        {
-            current_state = STATE_IDLE; 
-            printf("update not available \n"); 
+            case STATE_INSTALLING: 
+                /* Install the bundle */
+                printf("executing STATE_INSTALLING \n"); 
+                ret = sd_bus_call_method(bus, "de.pengutronix.rauc", "/", "de.pengutronix.rauc.Installer", "InstallBundle", NULL, &message, "sa{sv}", "/data/update.raucb", 0);
+                if (ret < 0)
+                {
+                    printf("error while calling InstallBundle method \n");
+                    current_state = STATE_ERROR; 
+                }
+                else
+                {
+                    printf("InstallBundle method called successfully ! \n");
+                    while(!ctx.done)
+                    {
+                        ret = sd_bus_process(bus, NULL);
+                        if (ret == 0)
+                        {
+                            sd_bus_wait(bus, UINT64_MAX);
+                        }
+                        if (ret < 0) break;
+                        if (ret > 0) continue; 
+
+                    }
+                    if(ctx.result == 0)
+                    {
+                        printf("building feedback json with finished = success \n"); 
+                        current_state = STATE_REBOOT_PENDING; 
+                        status = hawkbit_build_feedback_json("closed", "success", &FeedBackObject);
+                        if(status == STATUS_OK)
+                        {
+                            status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
+                            if (status == STATUS_OK)
+                            {
+                                printf("sending feedback OK \n"); 
+                            }
+                            else
+                            {
+                                printf("sending feedback NOK \n"); 
+                            }
+
+                        }
+                        else
+                        {
+                            printf("error building the success feedback \n"); 
+                            
+                        }
+
+                    }
+                    else
+                    {
+                        current_state = STATE_ERROR; 
+                        printf("building feedback json with finished = failure \n"); 
+                        status = hawkbit_build_feedback_json("closed", "failure", &FeedBackObject);
+                        if (status == STATUS_OK)
+                        {
+
+                            status = hawkbit_send_feedback(feedback_url, argv[4], FeedBackObject); 
+                            if (status == STATUS_OK)
+                            {
+                                printf("sending feedback OK \n"); 
+                            }
+                            else
+                            {
+                                printf("sending feedback NOK \n"); 
+                            }
+                        }
+                        else
+                        {
+                            printf("error building the json object \n"); 
+                        }
+                    }
+
+                }
+                if(FeedBackObject)
+                {
+                    cJSON_Delete(FeedBackObject); 
+                }
+                break; 
+            case STATE_REBOOT_PENDING : 
+                printf ("REBOOT PENDING STATE... \n"); 
+                sd_bus_error error = SD_BUS_ERROR_NULL;
+
+                ret = sd_bus_call_method(bus,
+                                        "org.freedesktop.login1",          // destination (service)
+                                        "/org/freedesktop/login1",          // object path
+                                        "org.freedesktop.login1.Manager",   // interface
+                                        "Reboot",                           // method
+                                        &error,                             // pour récupérer l'erreur D-Bus si échec
+                                        NULL,                                // pas besoin de la réponse
+                                        "b", 0);                            // paramètre "interactive" = false
+
+                if (ret < 0)
+                {
+                    printf("error while calling Reboot method : %s\n", error.message);
+                }
+                else
+                {
+                    printf("Reboot method called successfully ! \n");
+                }
+
+                sd_bus_error_free(&error);
+                break; 
+            case STATE_ERROR : 
+                printf ("ERROR STATE ! \n"); 
+                break; 
+            default: 
+                break; 
         }
-    }
-    else
-    {
-        current_state = STATE_IDLE; 
-        printf ("hawkbit poll NOK ! \n"); 
+
     }
 
 
