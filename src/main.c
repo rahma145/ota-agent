@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
     char feedback_url[200]; 
     long action_id = 0; 
     
+    int running = 1; 
 
     /*************** DBUS *******************************/
 
@@ -214,7 +215,7 @@ int main(int argc, char *argv[])
     int compteur_poll_NOK = 0; 
     int compteur_update_NOK = 0; 
 
-    while(current_state != STATE_ERROR && current_state != STATE_REBOOT_PENDING)
+    while(running)
     {
 
         switch(current_state)
@@ -466,9 +467,11 @@ int main(int argc, char *argv[])
                 }
 
                 sd_bus_error_free(&error);
+                running = 0; 
                 break; 
             case STATE_ERROR : 
                 printf ("ERROR STATE ! \n"); 
+                running = 0; 
                 break; 
             default: 
                 break; 
